@@ -11,29 +11,53 @@
     cd ~/Desktop/
     # run1
     mv Bioo\ NEXTflex-23135384.zip Bioo-NEXTflex-23135384.zip
-    # copy the file to external drive
+    ## copy the file to external drive
     cp ~/Desktop/Bioo-NEXTflex-23135384.zip /media/immunome_2014/work/jelber2/immunome_urtd/run1/.
-    # go to the directory
+    ## go to the directory
     cd /media/immunome_2014/work/jelber2/immunome_urtd/run1/
-    # unzip the archive
+    ## unzip the archive
     unzip Bioo-NEXTflex-23135384.zip
-    # rename the unzipped folder
+    ## rename the unzipped folder
     mv Bioo\ NEXTflex-23135384 Bioo-NEXTflex-23135384
-    # grab all of the file names and save them as a document
-    find /media/immunome_2014/work/jelber2/immunome_urtd/Bioo-NEXTflex-23135384/ \
-    -maxdepth 5 -type f -print > rename-fastq
-    # make a directory called fastq
+    ## grab all of the file names and save them as a document
+    find /media/immunome_2014/work/jelber2/immunome_urtd/run1/Bioo-NEXTflex-23135384/ \
+    -maxdepth 5 -type f -print > rename-fastq-run1
+    ## make a directory called fastq
     mkdir fastq
-###Use regular expressions to create rename-fastq.sh
-    perl -pe s"/(.+\/BaseCalls\/)(\w+)(_\w+_\w+_)(R\d)(_\d+.fastq.gz)/mv \1\2\3\4\5 \/media\/immunome_2014\/work\/jelber2\/immunome_urtd\/fastq\/\2-\4.fastq.gz/" rename-fastq > rename-fastq.sh
-    nano rename-fastq.sh
-    # add #!/bin/bash
-    # save and exit
-    bash rename-fastq.sh
+    ## use regular expressions to create rename-fastq-run1.sh
+    perl -pe s"/(.+\/BaseCalls\/)(\w+)(_\w+_\w+_)(R\d)(_\d+.fastq.gz)/mv \1\2\3\4\5 \/media\/immunome_2014\/work\/jelber2\/immunome_urtd\/run1/fastq\/\2-\4.fastq.gz/" rename-fastq-run1 > rename-fastq-run1.sh
+    # add #!/bin/bash to first line
+    sed -i '1 i\#!/bin/bash' rename-fastq-run1.sh
+    bash rename-fastq-run1.sh
+    # run2
+    mv Bioo\ NEXTflex-23135384.zip Bioo-NEXTflex-23135384.zip
+    ## copy the file to external drive
+    cp ~/Desktop/Bioo-NEXTflex-23135384.zip /media/immunome_2014/work/jelber2/immunome_urtd/run2/.
+    ## go to the directory
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/run2/
+    ## unzip the archive
+    unzip Bioo-NEXTflex-23135384.zip
+    ## rename the unzipped folder
+    mv Bioo\ NEXTflex-23135384 Bioo-NEXTflex-23135384
+    ## grab all of the file names and save them as a document
+    find /media/immunome_2014/work/jelber2/immunome_urtd/run2/Bioo-NEXTflex-23135384/ \
+    -maxdepth 5 -type f -print > rename-fastq-run2
+    ## make a directory called fastq
+    mkdir fastq
+    ## use regular expressions to create rename-fastq-run2.sh
+    perl -pe s"/(.+\/BaseCalls\/)(\w+)(_\w+_\w+_)(R\d)(_\d+.fastq.gz)/mv \1\2\3\4\5 \/media\/immunome_2014\/work\/jelber2\/immunome_urtd\/run1/fastq\/\2-\4.fastq.gz/" rename-fastq-run2 > rename-fastq-run2.sh
+    # add #!/bin/bash to first line
+    sed -i '1 i\#!/bin/bash' rename-fastq-run2.sh
+    bash rename-fastq-run2.sh
 ##Put Data on SuperMikeII
+    # run1
     rsync --stats --progress --archive \
-    /media/immunome_2014/work/jelber2/immunome_urtd/ \
-    jelber2@mike.hpc.lsu.edu:/work/jelber2/immunome_urtd/
+    /media/immunome_2014/work/jelber2/immunome_urtd/run1/ \
+    jelber2@mike.hpc.lsu.edu:/work/jelber2/immunome_urtd/run1/ -n
+    # run2
+    rsync --stats --progress --archive \
+    /media/immunome_2014/work/jelber2/immunome_urtd/run2/ \
+    jelber2@mike.hpc.lsu.edu:/work/jelber2/immunome_urtd/run2/ -n
 ##Install programs and get reference genome
 ###trimmomatic-0.32
     cd /home/jelber2/bin/
@@ -124,7 +148,7 @@
     mv bedtools-2.22.1.tar.gz bedtools-2.22.1
     cd bedtools-2.22.1
     make
-###Got painted turtle reference genome
+###Got painted turtle reference genome (on SuperMikeII)
     cd /work/jelber2/reference/
     wget ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF_000241765.3_Chrysemys_picta_bellii-3.0.3/GCF_000241765.3_Chrysemys_picta_bellii-3.0.3_genomic.fna.gz
     gunzip GCF_000241765.3_Chrysemys_picta_bellii-3.0.3_genomic.fna.gz
@@ -132,50 +156,69 @@
 ###1.Make indexes (on SuperMikeII)
     qsub /home/jelber2/scripts/immunome_urtd/01-make_indexes.sh
 ###2.Quality control and adapter trimming (on SuperMikeII)
-    cd /work/jelber2/immunome_urtd/fastq
+    # run1
+    cd /work/jelber2/immunome_urtd/run1/fastq
     ~/scripts/immunome_urtd/02-trimmomatic.py *.fastq.gz
+    # run2
+    cd /work/jelber2/immunome_urtd/run2/fastq
+    ~/scripts/immunome_urtd/02-trimmomatic-run2.py *.fastq.gz
 ###3.BWA alignment (on SuperMikeII)
-    cd /work/jelber2/immunome_urtd/trimmed-data/
+    # run1
+    cd /work/jelber2/immunome_urtd/run1/trimmed-data/
     ~/scripts/immunome_urtd/03-bwa.py *.trim.fastq.gz
+    # run2
+    cd /work/jelber2/immunome_urtd/run2/trimmed-data/
+    ~/scripts/immunome_urtd/03-bwa-run2.py *.trim.fastq.gz
 ###4.STAMPY alignment (on SuperMikeII)
-    cd /work/jelber2/immunome_urtd/bwa-alignment/
+    # run1
+    cd /work/jelber2/immunome_urtd/run1/bwa-alignment/
     ~/scripts/immunome_urtd/04-stampy.py *.bwa.sam
-###5.Clean,Sort,Dedup,Realign around indels (on SuperMikeII)
-    cd /work/jelber2/immunome_urtd/stampy-alignment/
-    ~/scripts/immunome_urtd/05-clean_sort_addRG_markdup_realign.py *stampy.bam
+    # run2
+    cd /work/jelber2/immunome_urtd/run2/bwa-alignment/
+    ~/scripts/immunome_urtd/04-stampy-run2.py *.bwa.sam
+###5a.Clean,Sort,Add Read Groups (on SuperMikeII)
+    # run1
+    cd /work/jelber2/immunome_urtd/run1/stampy-alignment/
+    ~/scripts/immunome_urtd/05a-clean_sort_addRG.py *.stampy.bam
+    # run2
+    cd /work/jelber2/immunome_urtd/run2/stampy-alignment/
+    ~/scripts/immunome_urtd/05a-clean_sort_addRG-run2.py *.stampy.bam
+###5b.Clean,Sort,Add Read Groups, DeDup,Realign Around Indels(on SuperMikeII)
+    cd /work/jelber2/immunome_urtd/run1/clean-sort-addRG/
+    ~/scripts/immunome_urtd/05b-clean_sort_addRG_markdup_realign.py *-CL-RG.bam
 ###6.Merge BAM files, Call SNPs initially (on SuperMikeII)
-    cd /work/jelber2/immunome_urtd/realign-around-indels/
+    cd /work/jelber2/immunome_urtd/combined/realign-around-indels/
     ~/scripts/immunome_urtd/06-mergeBAM_callSNPs_initial.py *-realigned.bam
 ###7.Quality score recalibration 1 (on SuperMikeII)
-    cd /work/jelber2/immunome_urtd/realign-around-indels
+    cd /work/jelber2/immunome_urtd/combined/realign-around-indels/
     find . -name '*-realigned.bam' -not -name 'ALL-samples-*' \
      -exec ~/scripts/immunome_urtd/07-qual_score_recal01.py {} \;
 ###8.Merge BAM files, Call SNPs recalibrated 1 (on SuperMikeII)
-    cd /work/jelber2/immunome_urtd/call-SNPs-recal01/
+    cd /work/jelber2/immunome_urtd/combined/call-SNPs-recal01/
     ~/scripts/immunome_urtd/08-mergeBAM_callSNPs_recal01.py *-recal01.bam
 ###9.Quality score recalibration 2 (on SuperMikeII)
-    cd /work/jelber2/immunome_urtd/call-SNPs-recal01/
+    cd /work/jelber2/immunome_urtd/combined/call-SNPs-recal01/
     find . -name '*-recal01.bam' -not -name 'ALL-samples-*' \
     -exec ~/scripts/immunome_urtd/09-qual_score_recal02.py {} \;
 ###10.Merge BAM files, Call SNPs recalibrated 2 (on SuperMikeII)
-    cd /work/jelber2/immunome_urtd/call-SNPs-recal02/
+    cd /work/jelber2/immunome_urtd/combined/call-SNPs-recal02/
     ~/scripts/immunome_urtd/10-mergeBAM_callSNPs_recal02.py *-recal02.bam
 ###11.Quality score recalibration 3 (on SuperMikeII)
-    cd /work/jelber2/immunome_urtd/call-SNPs-recal02/
+    cd /work/jelber2/immunome_urtd/combined/call-SNPs-recal02/
     find . -name '*-recal02.bam' -not -name 'ALL-samples-*' \
     -exec ~/scripts/immunome_urtd/11-qual_score_recal03.py {} \;
 ###12.Merge BAM files, Call SNPs recalibrated 3 (on SuperMikeII)
-    cd /work/jelber2/immunome_urtd/call-SNPs-recal03/
+    cd /work/jelber2/immunome_urtd/combined/call-SNPs-recal03/
     ~/scripts/immunome_urtd/12-mergeBAM_callSNPs_recal03.py *-recal03.bam
 ###13.Sequencing metrics
-    cd /work/jelber2/immunome_urtd/call-SNPs-recal03/
+    cd /work/jelber2/immunome_urtd/combined/call-SNPs-recal03/
     ~/scripts/immunome_2014/13-seq_metrics.py ALL-samples-recal03.bam
 ###14.plot coverage for each sample
 ####run bedtools coverage on all bam files, then keep only lines with 'all' on them
     #FROM http://gettinggeneticsdone.blogspot.com/2014/03/visualize-coverage-exome-targeted-ngs-bedtools.html
     #ALSO FROM https://github.com/arq5x/bedtools-protocols/blob/master/bedtools.md
 #####make samplelist
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/call-SNPs-recal03/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/call-SNPs-recal03/
     ls *.bam | grep -v "ALL"| perl -pe "s/-recal03.bam//g" > samplelist
 #####calculate coverage
     cd /media/immunome_2014/work/jelber2/immunome_urtd/
@@ -232,9 +275,9 @@
     GCF_000241765.3_Chrysemys_picta_bellii-3.0.3_genomic_immunome_baits.gff \
     > GCF_000241765.3_Chrysemys_picta_bellii-3.0.3_genomic_immunome_baits.gtf
 ####run subread
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/
     mkdir featureCounts
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/featureCounts/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/featureCounts/
 #####all samples at once
     #on CentOS machine
     #at the gene level
@@ -285,13 +328,13 @@
     done < ../call-SNPs-recal03/samplelist
     cat *.exon.count > exon.counts.per.sample
 ###16.Haplotype Caller (on SuperMikeII)
-    cd /work/jelber2/immunome_urtd/call-SNPs-recal03/
+    cd /work/jelber2/immunome_urtd/combined/call-SNPs-recal03/
     #excludes file ALL-samples-recal03.bam
     find . -name '*-recal03.bam' -not -name 'ALL-samples-*' \
     -exec ~/scripts/immunome_urtd/14-haplotypecaller.py {} \;
 ###17.Ran GenotypeGVCFs to perform joint genotyping
     #on Cenots machine
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/hc/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/hc/
     java -Xmx8g -jar ~/bin/GATK-3.3.0/GenomeAnalysisTK.jar \
     -T GenotypeGVCFs \
     -R /media/immunome_2014/work/jelber2/reference/GCF_000241765.3_Chrysemys_picta_bellii-3.0.3_genomic.fna \
@@ -347,7 +390,7 @@
     -selectType SNP
 ###21.Ran Variant Recalibrator
 ####Note: used SNPS and Indels from previous immunome_2014 data for "truthing" and filtration
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/
     mkdir vqsr
     cd vqsr
 #####Recalibrated snps
@@ -397,7 +440,7 @@
     cd ~/bin
     wget http://faculty.washington.edu/browning/beagle/beagle.r1398.jar
 ####Ran beagle on snps and indels separately
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/
     mkdir beagle
     cd beagle
     #snps
@@ -428,7 +471,7 @@
     # Path to vcftools executable
     /home/jelber2/bin/vcftools_0.1.12b/bin/vcftools
 ####Remove loci with AF=1
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/beagle/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/beagle/
 #####snps
     #removes loci with AF=1
     zcat ../beagle/ALL-samples-Q30-snps-recal-beagle.vcf.gz | grep -v "AF=1" \
@@ -516,7 +559,7 @@
 ###2.Need to look for protein altering variants shared by samples in the same phenotype
 ####a.Split vcf file for snpEff
     #snpEff needs ALL-samples*.vcf file split by sample (i.e., into Sample1.vcf, Sample2.vcf)
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/
     mkdir split-vcfs
     cd split-vcfs/
     #compress vcf files
@@ -536,7 +579,7 @@
     ~/bin/bcftools/bcftools view -s $i ../beagle/ALL-samples-Q30-indels-recal-beagle-polymorphic.vcf.gz > $i-indels.vcf
     done < ../call-SNPs-recal03/samplelist
 ####b.Ran snpEff on each split vcf file
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/split-vcfs/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/split-vcfs/
     # command below to run snpEff on all samples in samplelist
     # not implemented on SuperMikeII b/c process was < 15 min
     #snps
@@ -610,7 +653,7 @@
      ../split-vcfs/*-indels-annotated.vcf.gz
     ~/bin/samtools-1.1/htslib-1.1/tabix -p vcf ALL-samples-indels-annotated.vcf.gz
 ####f.Get only high quality non-synonymous alleles
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/
     mkdir shared-variants
     cd shared-variants
     #script to automate unzipping bgzipped files
@@ -690,12 +733,12 @@
     unzip Scripts.zip 
     mv Scripts\ for\ SFG/ Scripts_for_SFG
 ####c. make directory
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/
     mkdir bayescan
     cd bayescan
 ###2.Run for BayeScan for snps
 ####a.Add Genotype Qualities to ALL-samples-Q30-snps-recal-beagle-polymorphic.vcf.gz
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/bayescan/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/bayescan/
     zcat ../beagle/ALL-samples-Q30-snps-recal-beagle-polymorphic.vcf.gz | perl -pe "s/(GT:DS:GP)/\1:GQ/" \
     > ALL-samples-Q30-snps-recal-beagle-polymorphic-fixed.vcf
     perl -pe "s/(\d\|\d:\d:\d,\d,\d)/\1:30/g" \
@@ -710,7 +753,7 @@
     #1 = make outfile file (used_snp_genos.txt) showing what snp genotype were used
     #> = creates a file so you know the values for each population
     #output = bayes_input.tx, snpkey.txt, low_freq_snps.txt, used_snp_genos.txt
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/bayescan/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/bayescan/
     python ~/scripts/immunome_2014/fromSFG/Scripts_for_SFG/make_bayescan_input_using_phased_data.py \
     ../bayescan/ALL-samples-Q30-snps-recal-beagle-polymorphic-fixed2.vcf \
     populations.txt 30 4 1 1 > population-info.txt
@@ -750,7 +793,7 @@
     ~/bin/IGV_2.3.40/igv.sh /media/immunome_2014/work/jelber2/immunome_urtd/split-vcfs/ALL-samples-snps-annotated.vcf.gz
     #open noMAF_loci_FDR_0.05_outlier_snps_igv.txt
 ####g.Filter annotated VCF file by outlier snps
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/bayescan/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/bayescan/
     zcat ../split-vcfs/ALL-samples-snps-annotated.vcf.gz > ALL-samples-snps-annotated2.vcf
     perl -pe "s/goto (\w+\.\d):(\d+)\n/\1\t\2\n/" noMAF_loci_FDR_0.05_outlier_snps_igv.txt > noMAF_loci_FDR_0.05_outlier_snps_vcf.txt
     while read i;do
@@ -779,7 +822,7 @@
     # 2
 ###3.Run BayeScan for indels
 ####a.Add Genotype Qualities to ALL-samples-Q30-indels-recal-beagle-polymorphic.vcf.gz
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/bayescan/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/bayescan/
     zcat ../beagle/ALL-samples-Q30-indels-recal-beagle-polymorphic.vcf.gz | perl -pe "s/(GT:DS:GP)/\1:GQ/" \
     > ALL-samples-Q30-indels-recal-beagle-polymorphic-fixed.vcf
     perl -pe "s/(\d\|\d:\d:\d,\d,\d)/\1:30/g" \
@@ -792,7 +835,7 @@
     #1 = make outfile file (used_snp_genos.txt) showing what snp genotype were used
     #> = creates a file so you know the values for each population
     #output = bayes_input.tx, snpkey.txt, low_freq_indels.txt, used_snp_genos.txt
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/bayescan/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/bayescan/
     python ~/scripts/immunome_2014/fromSFG/Scripts_for_SFG/make_bayescan_input_using_phased_data.py \
     ../bayescan/ALL-samples-Q30-indels-recal-beagle-polymorphic-fixed2.vcf \
     populations.txt 30 4 1 1 > population-info.txt
@@ -832,7 +875,7 @@
     ~/bin/IGV_2.3.40/igv.sh /media/immunome_2014/work/jelber2/immunome_urtd/split-vcfs/ALL-samples-indels-annotated.vcf.gz
     #open noMAF_loci_FDR_0.05_outlier_indels_igv.txt
 ####f.Filter annotated VCF file by outlier indels
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/bayescan/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/bayescan/
     zcat ../split-vcfs/ALL-samples-indels-annotated.vcf.gz > ALL-samples-indels-annotated2.vcf
     perl -pe "s/goto (\w+\.\d):(\d+)\n/\1\t\2\n/" noMAF_loci_FDR_0.05_outlier_indels_igv.txt > noMAF_loci_FDR_0.05_outlier_indels_vcf.txt
     while read i;do
@@ -860,12 +903,12 @@
     # 0
 =====
 ##STEPS FOR POPGEN
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/
     mkdir popgen
 ###1.Make copy of ALL-samples-Q30-snps-recal-beagle-polymorphic.vcf
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/beagle/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/beagle/
     cp ALL-samples-Q30-snps-recal-beagle-polymorphic.vcf.gz ../popgen/.
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/popgen/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/popgen/
     gunzip ALL-samples-Q30-snps-recal-beagle-polymorphic.vcf.gz
 ###2.Get only non-synonymous SNPs
     zcat ../split-vcfs/ALL-samples-snps-annotated.vcf.gz| grep '#' > header
@@ -873,7 +916,7 @@
     cat header non-synonymous > ALL-samples-Q30-snps-recal-beagle-polymorphic-nonsyn.vcf
 ###3.Check loci for linkage disequilibrium and Hardy-Weinberg Equilibrium
 ####Had to make populations.txt file and population-specific files for vcf filtering
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/popgen/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/popgen/
     grep "CF" ../bayescan/populations.txt > CF
     grep "OLD" ../bayescan/populations.txt > OLD
     grep "FC" ../bayescan/populations.txt > FC
@@ -888,7 +931,7 @@
     ~/bin/vcftools_0.1.12b/bin/vcftools --vcf ALL-samples-Q30-snps-recal-beagle-polymorphic-nonsyn.vcf --hardy --out hwe.OLD-nonsyn --keep OLD
     ~/bin/vcftools_0.1.12b/bin/vcftools --vcf ALL-samples-Q30-snps-recal-beagle-polymorphic-nonsyn.vcf --hardy --out hwe.FC-nonsyn --keep FC
 #####R function to count number of sites out of HWE (i.e., p_HWE < 0.05 after fdr correction)
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/popgen/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/popgen/
     #all snps
     R
     CFhwe <-read.table(file ="hwe.CF.hwe", header = TRUE)
@@ -920,7 +963,7 @@
     ~/bin/vcftools_0.1.12b/bin/vcftools --vcf ALL-samples-Q30-snps-recal-beagle-polymorphic-nonsyn.vcf --geno-chisq --out geno.FC-nonsyn --keep FC
     ~/bin/vcftools_0.1.12b/bin/vcftools --vcf ALL-samples-Q30-snps-recal-beagle-polymorphic-nonsyn.vcf --geno-chisq --out geno.OLD-nonsyn --keep OLD
 #####R function to count number of sites out of linkage equi (i.e., PVAL < 0.05 after fdr correction)
-    cd /media/immunome_2014/work/jelber2/immunome_urtd/popgen/
+    cd /media/immunome_2014/work/jelber2/immunome_urtd/combined/popgen/
     #all snps
     R
     FCld = na.omit(read.table(file ="geno.FC.geno.chisq", header = TRUE))
